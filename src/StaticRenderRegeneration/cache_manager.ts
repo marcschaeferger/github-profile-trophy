@@ -4,9 +4,20 @@ import { existsSync, sanitizeCacheFilename } from "./utils.ts";
 export class CacheManager {
   private readonly sanitizedCacheFile: string;
 
+  /**
+   * Creates a new CacheManager.
+   * @param revalidateTime The time in milliseconds to revalidate the cache.
+   * @param cacheFile The cache file name to use. This will be sanitized.
+   * @throws {Error} If the sanitized cache file name is invalid (empty after sanitization).
+   */
   constructor(private revalidateTime: number, private cacheFile: string) {
     // Sanitize the cache filename to prevent path traversal attacks
     this.sanitizedCacheFile = sanitizeCacheFilename(cacheFile);
+    if (!this.sanitizedCacheFile) {
+      throw new Error(
+        `Invalid cacheFile parameter: "${cacheFile}" results in an empty sanitized filename.`
+      );
+    }
   }
 
   // Reason to use /tmp/:
