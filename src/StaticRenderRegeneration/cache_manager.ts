@@ -1,13 +1,18 @@
 import { Logger } from "../Helpers/Logger.ts";
-import { existsSync } from "./utils.ts";
+import { existsSync, sanitizeCacheFilename } from "./utils.ts";
 
 export class CacheManager {
-  constructor(private revalidateTime: number, private cacheFile: string) {}
+  private sanitizedCacheFile: string;
+
+  constructor(private revalidateTime: number, private cacheFile: string) {
+    // Sanitize the cache filename to prevent path traversal attacks
+    this.sanitizedCacheFile = sanitizeCacheFilename(cacheFile);
+  }
 
   // Reason to use /tmp/:
   // https://github.com/orgs/vercel/discussions/314
   get cacheFilePath(): string {
-    return `/tmp/${this.cacheFile}`;
+    return `/tmp/${this.sanitizedCacheFile}`;
   }
   get cacheFileExists(): boolean {
     return existsSync(this.cacheFilePath);

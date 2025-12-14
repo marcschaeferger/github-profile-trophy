@@ -40,3 +40,25 @@ export const existsSync = (filename: string): boolean => {
     return false;
   }
 };
+
+/**
+ * Sanitizes a cache filename to prevent path traversal attacks.
+ * Only allows alphanumeric characters, hyphens, and underscores.
+ * Removes any path separators and relative path sequences.
+ * @param filename - The filename to sanitize
+ * @returns Sanitized filename safe for use in file paths
+ */
+export function sanitizeCacheFilename(filename: string): string {
+  // Remove any path separators and parent directory references
+  // Only allow alphanumeric characters, hyphens, and underscores
+  const sanitized = filename.replace(/[^a-zA-Z0-9_-]/g, "");
+
+  // Ensure the result is not empty and doesn't start with a dot
+  if (sanitized.length === 0) {
+    throw new Error(
+      "Invalid cache filename: sanitization resulted in empty string",
+    );
+  }
+
+  return sanitized;
+}
