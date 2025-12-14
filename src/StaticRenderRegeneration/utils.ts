@@ -53,7 +53,7 @@ export function sanitizeCacheFilename(filename: string): string {
   // Only allow alphanumeric characters, hyphens, and underscores
   const sanitized = filename.replace(/[^a-zA-Z0-9_-]/g, "");
 
-  // Ensure the result is not empty and doesn't start with a dot
+  // Ensure the result is not empty
   if (sanitized.length === 0) {
     throw new Error(
       "Invalid cache filename: sanitization resulted in empty string",

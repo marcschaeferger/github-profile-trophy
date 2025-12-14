@@ -2,7 +2,7 @@ import { Logger } from "../Helpers/Logger.ts";
 import { existsSync, sanitizeCacheFilename } from "./utils.ts";
 
 export class CacheManager {
-  private sanitizedCacheFile: string;
+  private readonly sanitizedCacheFile: string;
 
   constructor(private revalidateTime: number, private cacheFile: string) {
     // Sanitize the cache filename to prevent path traversal attacks
