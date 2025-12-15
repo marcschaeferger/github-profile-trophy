@@ -11,6 +11,20 @@ export function getUrl(request: Request) {
   }
 }
 
+/**
+ * Reads cache file from disk.
+ * 
+ * SECURITY: This function includes path traversal protection by:
+ * 1. Normalizing the path to resolve .. and . sequences
+ * 2. Validating that the resolved path is within /tmp directory
+ * 
+ * NOTE: This validation is designed for Unix-like systems (Linux, macOS)
+ * which use case-sensitive filesystems and forward slashes.
+ * The application runs on Vercel/Docker Linux environments.
+ * 
+ * @param cacheFilePath - Path to the cache file
+ * @returns File contents as Uint8Array, or null if file cannot be read
+ */
 export function readCache(cacheFilePath: string): Uint8Array | null {
   try {
     // Resolve the path to normalize any .. or . sequences
