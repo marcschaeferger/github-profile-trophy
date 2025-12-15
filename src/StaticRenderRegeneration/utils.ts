@@ -1,3 +1,5 @@
+import { resolve } from "https://deno.land/std@0.203.0/path/mod.ts";
+
 export function getUrl(request: Request) {
   try {
     return new URL(request.url);
@@ -11,7 +13,16 @@ export function getUrl(request: Request) {
 
 export function readCache(cacheFilePath: string): Uint8Array | null {
   try {
-    return Deno.readFileSync(cacheFilePath);
+    // Resolve the path to normalize any .. or . sequences
+    // This prevents path traversal attacks like /tmp/../../../etc/passwd
+    const resolvedPath = resolve(cacheFilePath);
+    
+    // Ensure the path is within the /tmp directory to prevent path traversal
+    if (!resolvedPath.startsWith("/tmp/")) {
+      throw new Error("Access denied: Cache files must be in /tmp directory");
+    }
+    
+    return Deno.readFileSync(resolvedPath);
   } catch {
     return null;
   }

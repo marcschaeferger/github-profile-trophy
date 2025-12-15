@@ -1,5 +1,5 @@
 import { assertEquals } from "../../../deps.ts";
-import { sanitizeCacheFilename } from "../utils.ts";
+import { readCache, sanitizeCacheFilename } from "../utils.ts";
 
 Deno.test("sanitizeCacheFilename - should allow valid hex hash", () => {
   const validHash =
@@ -69,4 +69,57 @@ Deno.test("sanitizeCacheFilename - should prevent directory escape attempts", ()
   const escapeAttempt = "..%2F..%2Fetc%2Fpasswd";
   const result = sanitizeCacheFilename(escapeAttempt);
   assertEquals(result, "2F2Fetc2Fpasswd");
+});
+
+Deno.test("readCache - should return null for path traversal attempts", () => {
+  // Attempt to read outside /tmp directory using path traversal
+  const maliciousPath = "/tmp/../../../etc/passwd";
+  const result = readCache(maliciousPath);
+  
+  // Should return null because the resolved path is not in /tmp
+  assertEquals(result, null);
+});
+
+Deno.test("readCache - should return null for absolute paths outside /tmp", () => {
+  const maliciousPath = "/etc/passwd";
+  const result = readCache(maliciousPath);
+  
+  // Should return null because the path is not in /tmp
+  assertEquals(result, null);
+});
+
+Deno.test("readCache - should accept valid /tmp paths", async () => {
+  // Create a temporary test file
+  const testFile = "/tmp/test-cache-file-12345.txt";
+  const testContent = new TextEncoder().encode("test content");
+  
+  try {
+    // Write test file
+    await Deno.writeFile(testFile, testContent);
+    
+    // Read it back using readCache
+    const result = readCache(testFile);
+    
+    // Should successfully read the file
+    assertEquals(result !== null, true);
+    if (result !== null) {
+      const content = new TextDecoder().decode(result);
+      assertEquals(content, "test content");
+    }
+  } finally {
+    // Clean up
+    try {
+      await Deno.remove(testFile);
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+});
+
+Deno.test("readCache - should return null for non-existent files in /tmp", () => {
+  const nonExistentPath = "/tmp/non-existent-file-xyz.txt";
+  const result = readCache(nonExistentPath);
+  
+  // Should return null for non-existent files
+  assertEquals(result, null);
 });
