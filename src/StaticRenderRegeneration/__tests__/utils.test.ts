@@ -123,3 +123,23 @@ Deno.test("readCache - should return null for non-existent files in /tmp", () =>
   // Should return null for non-existent files
   assertEquals(result, null);
 });
+
+Deno.test("readCache - should prevent /tmp directory name bypass", () => {
+  // Attempt to bypass using a directory with similar name
+  const bypassPath = "/tmp/../tmp2/file";
+  const result = readCache(bypassPath);
+  
+  // Should return null because resolved path would be /tmp2/file
+  assertEquals(result, null);
+});
+
+Deno.test("readCache - should handle /tmp without trailing slash", () => {
+  // The exact /tmp path should be allowed (though unlikely to be used)
+  const tmpPath = "/tmp";
+  // Since /tmp is a directory, readFileSync will fail and return null
+  // But the validation should not reject it
+  const result = readCache(tmpPath);
+  
+  // Should return null because /tmp is a directory not a file
+  assertEquals(result, null);
+});

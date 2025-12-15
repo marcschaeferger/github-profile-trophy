@@ -18,7 +18,8 @@ export function readCache(cacheFilePath: string): Uint8Array | null {
     const resolvedPath = resolve(cacheFilePath);
     
     // Ensure the path is within the /tmp directory to prevent path traversal
-    if (!resolvedPath.startsWith("/tmp/")) {
+    // Check if path is exactly /tmp or starts with /tmp/
+    if (resolvedPath !== "/tmp" && !resolvedPath.startsWith("/tmp/")) {
       throw new Error("Access denied: Cache files must be in /tmp directory");
     }
     
