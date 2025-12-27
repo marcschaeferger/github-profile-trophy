@@ -1,3 +1,5 @@
+import { resolve } from "https://deno.land/std@0.203.0/path/mod.ts";
+
 export function getUrl(request: Request) {
   try {
     return new URL(request.url);
@@ -9,9 +11,34 @@ export function getUrl(request: Request) {
   }
 }
 
+/**
+ * Reads cache file from disk.
+ * 
+ * SECURITY: This function includes path traversal protection by:
+ * 1. Normalizing the path to resolve .. and . sequences
+ * 2. Validating that the resolved path is within /tmp directory
+ * 
+ * NOTE: This validation is designed for Unix-like systems (Linux, macOS)
+ * which use case-sensitive filesystems and forward slashes.
+ * The application runs on Vercel/Docker Linux environments.
+ * 
+ * @param cacheFilePath - Path to the cache file
+ * @returns File contents as Uint8Array, or null if file cannot be read
+ */
 export function readCache(cacheFilePath: string): Uint8Array | null {
   try {
-    return Deno.readFileSync(cacheFilePath);
+    // Resolve the path to normalize any .. or . sequences
+    // This prevents path traversal attacks like /tmp/../../../etc/passwd
+    const resolvedPath = resolve(cacheFilePath);
+    
+    // Ensure the path is within the /tmp directory to prevent path traversal
+    // Check if path is exactly /tmp or starts with /tmp/
+    // Perform case-sensitive validation to ensure path is within /tmp
+    if (resolvedPath !== "/tmp" && !resolvedPath.startsWith("/tmp/")) {
+      throw new Error("Access denied: Cache files must be in /tmp directory");
+    }
+    
+    return Deno.readFileSync(resolvedPath);
   } catch {
     return null;
   }
@@ -40,3 +67,25 @@ export const existsSync = (filename: string): boolean => {
     return false;
   }
 };
+
+/**
+ * Sanitizes a cache filename to prevent path traversal attacks.
+ * Only allows alphanumeric characters, hyphens, and underscores.
+ * Removes any path separators and relative path sequences.
+ * @param filename - The filename to sanitize
+ * @returns Sanitized filename safe for use in file paths
+ */
+export function sanitizeCacheFilename(filename: string): string {
+  // Remove any path separators and parent directory references
+  // Only allow alphanumeric characters, hyphens, and underscores
+  const sanitized = filename.replace(/[^a-zA-Z0-9_-]/g, "");
+
+  // Ensure the result is not empty
+  if (sanitized.length === 0) {
+    throw new Error(
+      "Invalid cache filename: sanitization resulted in empty string",
+    );
+  }
+
+  return sanitized;
+}
